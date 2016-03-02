@@ -1,0 +1,57 @@
+Description: Remove gssproxy
+ Gssproxy isn't packages for Ubuntu so we should drop it from 
+ the service definitions.  It also makes rpc-svcgssd always show
+ as failing on the client.
+ .
+Author: Bryan Quigley <bryan.quigley@canonical.com>
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/1452667
+
+--- nfs-utils-1.2.8.orig/systemd/auth-rpcgss-module.service
++++ nfs-utils-1.2.8/systemd/auth-rpcgss-module.service
+@@ -7,8 +7,8 @@
+ [Unit]
+ Description=Kernel Module supporting RPCSEC_GSS
+ DefaultDependencies=no
+-Before=gssproxy.service rpc-svcgssd.service rpc-gssd.service
+-Wants=gssproxy.service rpc-svcgssd.service rpc-gssd.service
++Before=rpc-svcgssd.service rpc-gssd.service
++Wants=rpc-svcgssd.service rpc-gssd.service
+ ConditionPathExists=/etc/krb5.keytab
+ 
+ [Service]
+--- nfs-utils-1.2.8.orig/systemd/nfs-client.target
++++ nfs-utils-1.2.8/systemd/nfs-client.target
+@@ -7,8 +7,8 @@ Wants=nfs-blkmap.service
+ After=nfs-blkmap.service
+ 
+ # GSS services dependencies and ordering
+-Wants=auth-rpcgss-module.service
+-After=rpc-gssd.service rpc-svcgssd.service gssproxy.service
++Wants=rpc-gssd.service
++After=rpc-gssd.service
+ 
+ [Install]
+ WantedBy=multi-user.target
+--- nfs-utils-1.2.8.orig/systemd/nfs-server.service
++++ nfs-utils-1.2.8/systemd/nfs-server.service
+@@ -12,7 +12,7 @@ Before= rpc-statd-notify.service
+ 
+ # GSS services dependencies and ordering
+ Wants=auth-rpcgss-module.service
+-After=rpc-gssd.service gssproxy.service rpc-svcgssd.service
++After=rpc-gssd.service rpc-svcgssd.service
+ 
+ # start/stop server before/after client
+ Before=remote-fs-pre.target
+--- nfs-utils-1.2.8.orig/systemd/rpc-svcgssd.service
++++ nfs-utils-1.2.8/systemd/rpc-svcgssd.service
+@@ -6,9 +6,6 @@ After=run-rpc_pipefs.mount local-fs.targ
+ PartOf=nfs-server.service
+ PartOf=nfs-utils.service
+ 
+-After=gssproxy.service
+-ConditionPathExists=|!/run/gssproxy.pid
+-ConditionPathExists=|!/proc/net/rpc/use-gss-proxy
+ ConditionPathExists=/etc/krb5.keytab
+ 
+ Wants=nfs-config.service

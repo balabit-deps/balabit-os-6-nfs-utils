@@ -1,0 +1,79 @@
+## Description: add some description
+## Origin/Author: add some origin or author
+## Bug: bug URL
+Index: ubuntu/utils/gssd/gssd.c
+===================================================================
+--- ubuntu.orig/utils/gssd/gssd.c	2013-05-24 16:44:14.635084023 -0400
++++ ubuntu/utils/gssd/gssd.c	2013-05-24 16:45:41.339080825 -0400
+@@ -63,6 +63,7 @@
+ int  root_uses_machine_creds = 1;
+ unsigned int  context_timeout = 0;
+ char *preferred_realm = NULL;
++int ticket_expiry_is_error = 0;
+ 
+ void
+ sig_die(int signal)
+@@ -85,7 +86,7 @@
+ static void
+ usage(char *progname)
+ {
+-	fprintf(stderr, "usage: %s [-f] [-l] [-M] [-n] [-v] [-r] [-p pipefsdir] [-k keytab] [-d ccachedir] [-t timeout] [-R preferred realm] [-D]\n",
++	fprintf(stderr, "usage: %s [-e] [-f] [-l] [-M] [-n] [-v] [-r] [-p pipefsdir] [-k keytab] [-d ccachedir] [-t timeout] [-R preferred realm] [-D]\n",
+ 		progname);
+ 	exit(1);
+ }
+@@ -102,8 +103,11 @@
+ 	char *progname;
+ 
+ 	memset(ccachesearch, 0, sizeof(ccachesearch));
+-	while ((opt = getopt(argc, argv, "DfvrlmnMp:k:d:t:R:")) != -1) {
++	while ((opt = getopt(argc, argv, "eDfvrlmnMp:k:d:t:R:")) != -1) {
+ 		switch (opt) {
++			case 'e':
++				ticket_expiry_is_error = 1;
++				break;
+ 			case 'f':
+ 				fg = 1;
+ 				break;
+Index: ubuntu/utils/gssd/gssd.h
+===================================================================
+--- ubuntu.orig/utils/gssd/gssd.h	2013-05-24 16:44:14.635084023 -0400
++++ ubuntu/utils/gssd/gssd.h	2013-05-24 16:44:14.627084023 -0400
+@@ -67,6 +67,7 @@
+ extern int			root_uses_machine_creds;
+ extern unsigned int 		context_timeout;
+ extern char			*preferred_realm;
++extern int			ticket_expiry_is_error;
+ 
+ TAILQ_HEAD(clnt_list_head, clnt_info) clnt_list;
+ 
+Index: ubuntu/utils/gssd/gssd.man
+===================================================================
+--- ubuntu.orig/utils/gssd/gssd.man	2013-05-24 16:44:14.635084023 -0400
++++ ubuntu/utils/gssd/gssd.man	2013-05-24 16:44:14.627084023 -0400
+@@ -272,6 +272,12 @@
+ seconds, which allows changing Kerberos tickets and identities frequently.
+ The default is no explicit timeout, which means the kernel context will live
+ the lifetime of the Kerberos service ticket used in its creation.
++.TP
++.B -e
++Return EACCESS instead of EKEYEXPIRED when a user's credentials expire.
++Returning EKEYEXPIRED was introduced around kernel 2.6.34 and causes all nfs4
++I/O to block when a user's credentials expire. This option reverts to old
++bevavior.
+ .SH SEE ALSO
+ .BR rpc.svcgssd (8),
+ .BR kerberos (1),
+Index: ubuntu/utils/gssd/gssd_proc.c
+===================================================================
+--- ubuntu.orig/utils/gssd/gssd_proc.c	2013-05-24 16:44:14.635084023 -0400
++++ ubuntu/utils/gssd/gssd_proc.c	2013-05-24 16:46:28.887079072 -0400
+@@ -1019,7 +1019,7 @@
+ 		 * trolling for credentials */
+ 		for (dirname = ccachesearch; create_resp != 0 && *dirname != NULL; dirname++) {
+ 			err = gssd_setup_krb5_user_gss_ccache(uid, clp->servername, *dirname);
+-			if (err == -EKEYEXPIRED)
++			if (err == -EKEYEXPIRED && !ticket_expiry_is_error)
+ 				downcall_err = -EKEYEXPIRED;
+ 			else if (!err)
+ 				create_resp = create_auth_rpc_client(clp, &rpc_clnt, &auth, uid,
