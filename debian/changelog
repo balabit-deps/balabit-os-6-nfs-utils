@@ -1,3 +1,13 @@
+nfs-utils (1:1.2.8-9ubuntu12.1) xenial; urgency=medium
+
+  * Fixing nfs-mountd dependency on rpcbind (race condition) (LP: #1590799)
+    by adding "rpcbind.socket" to "nfs-mountd.service"  as a dependency
+    to avoid race conditions:
+    - Add systemd-Fix-nfs-mountd-dependency-on-rpcbind.patch
+    - Add systemd-unit-files-fix-up-dependencies-on-rpcbind.patch
+
+ -- Rafael David Tinoco <rafael.tinoco@canonical.com>  Wed, 29 Mar 2017 10:50:52 +0200
+
 nfs-utils (1:1.2.8-9ubuntu12) xenial; urgency=medium
 
   * Drop gssproxy as it's not in Ubuntu (LP: #1446851)

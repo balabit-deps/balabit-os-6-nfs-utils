@@ -18,3 +18,5 @@
 27-systemd-enable-with-systemctl-statd.patch
 90-gss-free-lucid-sec-context.patch
 remove-gssproxy.patch
+systemd-unit-files-fix-up-dependencies-on-rpcbind.patch
+systemd-Fix-nfs-mountd-dependency-on-rpcbind.patch
