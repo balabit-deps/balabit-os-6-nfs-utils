@@ -1,3 +1,11 @@
+nfs-utils (1:1.2.8-9ubuntu12.2) xenial; urgency=medium
+
+  * d/nfs-utils_env.sh: alongside RPCSVCGSSDARGS, also export SVCGSSDARGS,
+    which is the variable name expected by the rpc-svcgssd systemd service.
+    (LP: #1616123)
+
+ -- Andreas Hasenack <andreas@canonical.com>  Thu, 25 Apr 2019 17:23:49 -0300
+
 nfs-utils (1:1.2.8-9ubuntu12.1) xenial; urgency=medium
 
   * Fixing nfs-mountd dependency on rpcbind (race condition) (LP: #1590799)
