@@ -20,3 +20,4 @@
 remove-gssproxy.patch
 systemd-unit-files-fix-up-dependencies-on-rpcbind.patch
 systemd-Fix-nfs-mountd-dependency-on-rpcbind.patch
+CVE-2019-3689.patch
